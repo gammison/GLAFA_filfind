@@ -139,7 +139,8 @@ class fil_finder_2D(object):
                  flatten_thresh=None,
                  smooth_size=None, size_thresh=None, glob_thresh=None,
                  adapt_thresh=None, distance=None, region_slice=None,
-                 mask=None, freq=None, save_name="FilFinder_output"):
+                 mask=None, freq=None, save_name="FilFinder_output",
+                 standard_width=None):
 
         # Accepts a numpy array or fits.PrimaryHDU
         output = input_data(image)
@@ -165,6 +166,11 @@ class fil_finder_2D(object):
         self.skeleton_pad_size = skeleton_pad_size
         self.freq = freq
         self.save_name = save_name
+
+        if standard_width is None:
+            self.standard_width = 0.2
+        else:
+            self.standard_width = standard_width
 
         # If pre-made mask is provided, remove nans if any.
         self.mask = None
@@ -380,8 +386,10 @@ class fil_finder_2D(object):
             The mask of filaments.
 
         '''
-        print "imgscale: (need to fix) %f" % self.imgscale
+        print "imgscale: %f (taken from the 3rd cdelt for GALFA cube)" \
+            % self.imgscale
 
+        print "standard_width: %f" % self.standard_width
 
         if self.mask is not None and use_existing_mask:
             warnings.warn("Using inputted mask. Skipping creation of a new mask.")
@@ -412,25 +420,15 @@ class fil_finder_2D(object):
                 warnings.warn("Beam width is set to 0.0."
                               "The size threshold is then 0. It is recommended"
                               "that size_thresh is manually set.")
-            #self.size_thresh = round(
-            #    np.pi * 5 * (0.1)**2. * self.imgscale ** -2)
-            self.size_thresh = 1000  #magic
-            print "size_thresh was %d, but is set to %d b/c magic" %\
-                (round(np.pi * 5 * (0.1) ** 2. * self.imgscale ** -2), self.size_thresh)
+            self.size_thresh = round(np.pi * 5 * (.1)**2. * .1 ** -2)
             # Area of ellipse for typical filament size. Divided by 10 to
             # incorporate sparsity.
         if self.adapt_thresh is None:
             # twice average FWHM for filaments
-            #self.adapt_thresh = round(0.2 / self.imgscale)
-            self.adapt_thresh = 100 #magic
-            print "adapt_thresh was %d, but is set to %d b/c magic" % \
-                (round(0.2 / self.imgscale), self.adapt_thresh)
+            self.adapt_thresh = round(self.standard_width / self.imgscale) * 2
         if self.smooth_size is None:
             # half average FWHM for filaments
-            #self.smooth_size = round(0.05 / self.imgscale)
-            self.smooth_size = 10 #magic
-            print "smooth_size was %d, but is set to %d b/c magic" % \
-                (round(0.05 / self.imgscale), self.smooth_size)
+            self.smooth_size = round(self.standard_width/ self.imgscale) / 2.0
 
         # Check if regridding is even necessary
         if self.adapt_thresh >= 40 and regrid:
@@ -524,18 +522,16 @@ class fil_finder_2D(object):
         # Remove small holes within the object
 
         if fill_hole_size is None:
-            #fill_hole_size = np.pi*(self.beamwidth/self.imgscale)**2
-            fill_hole_size = 5
-            print "fill_hole_size was %f, but is set to %f b/c magic" % \
-                (np.pi*(self.beamwidth/self.imgscale)**2, fill_hole_size)
+            fill_hole_size = np.pi*(self.beamwidth/self.imgscale)**2
 
         mask_objs, num, corners = \
             isolateregions(cleaned, fill_hole=True, rel_size=fill_hole_size,
                            morph_smooth=True, pad_size=self.skeleton_pad_size)
+
         print "\nnumber of objects: %d" % num
-        print mask_objs[0].shape
-        print np.where(mask_objs[0] == 0)
-        print corners
+        #print mask_objs[0].shape
+        #print np.where(mask_objs[0] == 0)
+        #print corners
         self.mask = recombine_skeletons(mask_objs,
                                         corners, self.image.shape,
                                         self.skeleton_pad_size, verbose=True)
@@ -545,6 +541,16 @@ class fil_finder_2D(object):
         # Through all the testing and deriving science results, this has not
         # been an issue! EK
         self.image[np.where((self.mask * self.image) < 0.0)] = 0
+
+        # PRINTING
+        print "size_thresh is set to %d (magic: %d)" %\
+            (self.size_thresh, 1000)
+        print "adapt_thresh is set to %d (magic: %d)" % \
+            (self.adapt_thresh, 100)
+        print "smooth_size is set to %d (magic: %d)" % \
+            (self.smooth_size, 10)
+        print "fill_hole_size is set to %f (magic: %f)" % \
+            (fill_hole_size, 5)
 
         if test_mode:
             p.imshow(np.log10(self.image), origin="lower", interpolation=None,
