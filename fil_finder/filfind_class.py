@@ -318,7 +318,8 @@ class fil_finder_2D(object):
                     smooth_size=None, size_thresh=None, verbose=False,
                     test_mode=False, regrid=True, border_masking=True,
                     zero_border=False, fill_hole_size=None,
-                    use_existing_mask=False, save_png=False, run_name=''):
+                    use_existing_mask=False, save_png=False, run_name='',
+                    output_mask_objs=False):
         '''
 
         This runs the complete segmentation process and returns a mask of the
@@ -528,6 +529,12 @@ class fil_finder_2D(object):
                            morph_smooth=True, pad_size=self.skeleton_pad_size)
 
         print "number of objects: %d" % num
+
+        if output_mask_objs:
+            if num == 0:
+                return [0,0]
+            return [mask_objs, corners]
+
         #print mask_objs[0].shape
         #print np.where(mask_objs[0] == 0)
         #print corners
@@ -588,7 +595,7 @@ class fil_finder_2D(object):
             p.show()
             return'''
 
-            if num != 0
+            if num != 0:
                 p.contour(self.mask, colors="r")
 
             p.title("Mask on Flattened Image."+run_name)
