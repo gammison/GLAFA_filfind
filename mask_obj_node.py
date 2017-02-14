@@ -89,7 +89,7 @@ class MaskObjNode:
         area of the imput masks. If the overlap is greater than overlap_thresh
         (# of pixels) then return True
         '''
-        if self.checkCornersOverlap(other_node) is False:
+        if self.checkCornersOverlap(other_node) == False:
             return False
 
         combined_and_mask = self.combineMask(other_node, merge_type='AND')
@@ -162,10 +162,10 @@ class MaskObjNode:
 
         Return the # of pixels masked (as opposed to the area of the mask)
         '''
-        if mask is None:
+        if mask == None:
             mask = self.mask
 
-        return np.size(np.where(mask is True)[0])
+        return np.size(np.where(mask == True)[0])
 
     def expandMask(self, new_corners):
         '''
@@ -181,7 +181,7 @@ class MaskObjNode:
         l_Pad = abs(new_corners[0][0] - old_corners[0][0])
         r_Pad = abs(new_corners[1][0] - old_corners[1][0])
 
-        return np.lib.pad(mask, ((b_Pad,t_Pad),(l_Pad,r_Pad)), 'constant', constant_values=0)
+        return np.lib.pad(mask, ((b_Pad, t_Pad), (l_Pad, r_Pad)), 'constant', constant_values=0)
 
     def checkAreaSize(self, corners=None):
         '''
@@ -191,7 +191,7 @@ class MaskObjNode:
 
         Return the area of the mask (in pixels^2)
         '''
-        if corners is None:
+        if corners == None:
             corners = self.corners
 
         return (corners[1][0] - corners[0][0]) * (corners[1][1] - corners[0][1])
