@@ -182,3 +182,16 @@ class MaskObjNode:
         r_Pad = abs(new_corners[1][0] - old_corners[1][0])
 
         return np.lib.pad(mask, ((b_Pad,t_Pad),(l_Pad,r_Pad)), 'constant', constant_values=0)
+
+    def checkAreaSize(self, corners=None):
+        '''
+        Calculate the area of self.mask by looking at its dimentions from its
+        corners. If corners are provided then an area based on that corner is
+        calculated.
+
+        Return the area of the mask (in pixels^2)
+        '''
+        if corners is None:
+            corners = self.corners
+
+        return (corners[1][0] - corners[0][0]) * (corners[1][1] - corners[0][1])
