@@ -50,11 +50,10 @@ class MaskObjNode:
         self.corners = new_corners
         self.corner_BL = new_corners[0]
         self.corner_TR = new_corners[1]
-        self.mask_size = checkAreaSize(new_corners)
+        self.mask_size = self.checkAreaSize(new_corners)
         self.masked_area_size = combined_masked_area_size
 
         return True
-
 
     def mergeNodeAlt(self, other_node):
         '''
@@ -80,26 +79,25 @@ class MaskObjNode:
         return new mask(comboMask,TL_X,TL_Y,BL_X,BL_Y)
         '''
 
-
     def checkMaskOverlap(self, other_node, overlap_thresh):
         '''
         First check if the coners of self.mask and other_node.mask overlap, if
-        the coners do overlap (meaning some part of the two squares overlap) we 
-        then check if actual masks overlap. To check for actual overlaps a 
-        combined AND mask is first made, and the masked area calculated. The 
-        masked area of the combined AND mask is then compared to the masked area
-        of the imput masks. If the overlap is greater than overlap_thresh (# of
-        pixels) then return True
+        the coners do overlap (meaning some part of the two squares overlap) we
+        then check if actual masks overlap. To check for actual overlaps a
+        combined AND mask is first made, and the masked area calculated. The
+        masked area of the combined AND mask is then compared to the masked
+        area of the imput masks. If the overlap is greater than overlap_thresh
+        (# of pixels) then return True
         '''
-        if self.checkCornersOverlap(other_node) == False:
+        if self.checkCornersOverlap(other_node) is False:
             return False
 
         combined_and_mask = self.combineMask(other_node, merge_type='AND')
         combined_masked_area_size = float(checkMaskedAreaSize(combined_and_mask))
 
-        if combined_masked_area_size/self.masked_area_size >= overlap_thresh:
+        if combined_masked_area_size / self.masked_area_size >= overlap_thresh:
             return True
-        elif combined_masked_area_size/other_node.masked_area_size >= overlap_thresh:
+        elif combined_masked_area_size / other_node.masked_area_size >= overlap_thresh:
             return True
         else:
             return False
@@ -134,10 +132,10 @@ class MaskObjNode:
         Check if self.mask and other_node.mask have any overlap
         '''
         if other_node.corner_BL[0] >= self.corner_TR[0] or \
-            other_node.corner_TR[0] <= self.corner_BL[0]:
+           other_node.corner_TR[0] <= self.corner_BL[0]:
             return False
         if other_node.corner_BL[1] >= self.corner_TR[1] or \
-            other_node.corner_TR[1] <= self.corner_BL[1]:
+           other_node.corner_TR[1] <= self.corner_BL[1]:
             return False
 
         return True
@@ -157,7 +155,6 @@ class MaskObjNode:
 
         return [[BL_X, BL_Y], [TR_X, TR_Y]]
 
-
     def checkMaskedAreaSize(self, mask=None):
         '''
         Calculate the amount of pixels that are masked by self.mask. If a new
@@ -165,11 +162,10 @@ class MaskObjNode:
 
         Return the # of pixels masked (as opposed to the area of the mask)
         '''
-        if mask == None:
+        if mask is None:
             mask = self.mask
 
-        return np.size(np.where(mask == True)[0])
-
+        return np.size(np.where(mask is True)[0])
 
     def expandMask(self, new_corners):
         '''
