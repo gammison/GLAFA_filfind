@@ -68,7 +68,7 @@ class MaskObjNode:
             for c in range(len(mask1[r])):
                 comboMask[r-radj1][c-cadj1] = mask1[r][c]
 
-        radj_2 = TL_Y - mask2.leftcorner.y 
+        radj_2 = TL_Y - mask2.leftcorner.y
         cadj_2 = TL_X - mask2.leftcorner.x
 
         for r in range(len(mask2)):
@@ -93,7 +93,7 @@ class MaskObjNode:
             return False
 
         combined_and_mask = self.combineMask(other_node, merge_type='AND')
-        combined_masked_area_size = float(checkMaskedAreaSize(combined_and_mask))
+        combined_masked_area_size = float(self.checkMaskedAreaSize(combined_and_mask))
 
         if combined_masked_area_size / self.masked_area_size >= overlap_thresh:
             return True
