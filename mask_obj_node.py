@@ -42,6 +42,9 @@ class MaskObjNode:
         if self.v_slice_index[-1] != other_node.v_slice_index[0]:
             self.v_slice_index.append(other_node.v_slice_index[0])
 
+        if self.checkCornersOverlap(other_node) == False:
+            print "corners don't overlap!!!"
+
         combined_or_mask = self.combineMask(other_node, merge_type='OR')
         combined_masked_area_size = self.checkMaskedAreaSize(combined_or_mask)
         new_corners = self.matchCorners(other_node)
@@ -93,11 +96,11 @@ class MaskObjNode:
             return False
 
         combined_and_mask = self.combineMask(other_node, merge_type='AND')
-        combined_masked_area_size = float(self.checkMaskedAreaSize(combined_and_mask))
+        combined_masked_area_size = self.checkMaskedAreaSize(combined_and_mask)
 
-        if combined_masked_area_size / self.masked_area_size >= overlap_thresh:
+        if float(combined_masked_area_size) / float(self.masked_area_size) >= overlap_thresh:
             return True
-        elif combined_masked_area_size / other_node.masked_area_size >= overlap_thresh:
+        elif float(combined_masked_area_size) / float(other_node.masked_area_size) >= overlap_thresh:
             return True
         else:
             return False
