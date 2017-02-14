@@ -26,7 +26,7 @@ class MaskObjNode:
         self.corner_TR = [corners[1][1], corners[1][0]]
         self.corners = [self.corner_BL, self.corner_TR]
 
-        self.v_slice_index = [v_slice_index, ]
+        self.v_slice_index = [v_slice_index]
 
         self.visited = False
         self.mask_size = self.checkAreaSize()
@@ -40,7 +40,7 @@ class MaskObjNode:
         fixed
         '''
         if self.v_slice_index[-1] != other_node.v_slice_index[0]:
-            self.v_slice_index.append(other_node.v_slice_index)
+            self.v_slice_index.append(other_node.v_slice_index[0])
 
         combined_or_mask = self.combineMask(other_node, merge_type='OR')
         combined_masked_area_size = self.checkMaskedAreaSize(combined_or_mask)
