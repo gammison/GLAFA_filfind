@@ -34,8 +34,9 @@ def process_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
     full_y_pixel_count = full_cube_shape[1]
     full_x_pixel_count = full_cube_shape[2]
 
-    print "\n\tThere are %d velocity channels in total" % full_v_channel_count
-    print "\n\tThe full image is %d by %d pixels" % (full_x_pixel_count, full_y_pixel_count)
+    print "\tThere are %d velocity channels in total" % full_v_channel_count
+    print "\tThe full image is %d by %d pixels" % (full_x_pixel_count, full_y_pixel_count)
+    print "\tProcessing x=" + str(x_range) + ", y=" + str(y_range) + " in v=" + str(v_range)
 
     # cut cube based on provided x&y dimentions
     cut_cube = full_cube[:, y_range[0]:y_range[1], x_range[0]:x_range[1]]
@@ -43,16 +44,17 @@ def process_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
     # run though the slices in v_range and find masks
     # store masks in nodes, and all nodes in a v slice in an dict by their masked_area_size
     # store that list in dict with v as key
+    # might have to correct
     nodes_by_v_slice = {}
     for v in xrange(v_range[0], v_range[1]):
         v_slice = cut_cube[v, :, :]
         nodes_in_slice = {}
-        print "\n\n\tworking on velocity slice %d" % v
+        print "\n\tworking on velocity slice %d" % v
 
         # puts slice into filfind
         fils = filfind.fil_finder_2D(v_slice, header=hdr, beamwidth=10.0, glob_thresh=20,
-                                     distance=100, flatten_thresh=95, standard_width=1.1,
-                                     size_thresh=1000)
+                                     distance=100, flatten_thresh=95, standard_width=1,
+                                     size_thresh=600)
         # note size_thresh, adapt_thresh, smooth_size, fill_hole_size can all be set by args
         mask_objs = fils.create_mask(verbose=verbose_process, regrid=False, border_masking=True,
                                      save_png=True, run_name=str(v), output_mask_objs=True,
