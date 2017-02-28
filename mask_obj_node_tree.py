@@ -18,10 +18,18 @@ class MaskObjNodeTree:
 
         self.has_ended = False
 
-    def addNode(self, new_node):
+    def addNode(self, new_node, verbose=False):
+        if verbose:
+            print "Adding node to root"
+            print "Old corners: " + str(self.root_node.corners)
+            print "New node's corners: " + str(new_node.corners)
+
         self.root_node.mergeNode(new_node)
         self.node_list.append(new_node)
         self.length += 1
+
+        if verbose:
+            print "New corners: " + str(self.root_node.corners)
         return self.length
 
     def getNode(self, node_number):
