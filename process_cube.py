@@ -3,6 +3,7 @@ This takes in a GALFA cube and processes it into a dict of dict
 '''
 
 # imports
+import os
 import sys
 import pickle
 from astropy.io import fits
@@ -13,7 +14,7 @@ import filfind_class as filfind
 
 
 def process_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
-                                save_struct=True, verbose_process=False):
+                                save_struct=True, verbose_process=False, verbose=True):
     '''
     Takes a GALFA data cube file, cuts it to the specified dimentions, and
     processes it slice by slice to find strucutres on each v slice with filfind.
@@ -54,7 +55,8 @@ def process_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
                                      size_thresh=1000)
         # note size_thresh, adapt_thresh, smooth_size, fill_hole_size can all be set by args
         mask_objs = fils.create_mask(verbose=verbose_process, regrid=False, border_masking=True,
-                                     save_png=True, run_name=str(v), output_mask_objs=True)
+                                     save_png=True, run_name=str(v), output_mask_objs=True,
+                                     test_mode=verbose_process)
 
         # put returned masks in a dict of mask_obj_nodes
         if mask_objs[0] == 0:
@@ -69,9 +71,15 @@ def process_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
 
     # exit options
     if save_struct:
-        save_dir = '../pickled_dicts'
-        save_name = cube_name.split('.')[0] + '_' + str(v_range) + '_' + str(x_range) + '_' + str(y_range)
-        pickle.dump(nodes_by_v_slice, open(save_dir + save_name, 'wb'))
+        save_dir = 'pickled_dicts/'
+        save_name = cube_name.split('.')[0] + str(v_range) + str(x_range) + str(y_range) + '.p'
+        save_path = save_dir + save_name
+
+        if verbose:
+            print "saving struct at " + save_path
+
+        pickle.dump(nodes_by_v_slice, open(save_path, 'wb'))
+        return save_path
 
     else:
         return nodes_by_v_slice
