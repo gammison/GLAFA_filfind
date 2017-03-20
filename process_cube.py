@@ -3,7 +3,6 @@ This takes in a GALFA cube and processes it into a dict of dict
 '''
 
 # imports
-import os
 import sys
 import pickle
 from astropy.io import fits
@@ -13,7 +12,7 @@ sys.path.append(fil_finder_dir)
 import filfind_class as filfind
 
 
-def process_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
+def preprocess_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
                                 save_struct=True, verbose_process=False, verbose=True):
     '''
     Takes a GALFA data cube file, cuts it to the specified dimentions, and

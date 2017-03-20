@@ -387,10 +387,11 @@ class fil_finder_2D(object):
             The mask of filaments.
 
         '''
-        print "imgscale: %f (taken from the 3rd cdelt for GALFA cube)" \
-            % self.imgscale
+        if verbose:
+            print "imgscale: %f (taken from the 3rd cdelt for GALFA cube)" \
+                % self.imgscale
 
-        print "standard_width: %f" % self.standard_width
+            print "standard_width: %f" % self.standard_width
 
         if self.mask is not None and use_existing_mask:
             warnings.warn("Using inputted mask. Skipping creation of a new mask.")
@@ -530,14 +531,6 @@ class fil_finder_2D(object):
 
         print "number of objects: %d" % num
 
-        if output_mask_objs:
-            if num == 0:
-                return [0,0]
-            return [mask_objs, corners]
-
-        #print mask_objs[0].shape
-        #print np.where(mask_objs[0] == 0)
-        #print corners
         self.mask = recombine_skeletons(mask_objs,
                                         corners, self.image.shape,
                                         self.skeleton_pad_size, verbose=True)
@@ -548,15 +541,15 @@ class fil_finder_2D(object):
         # been an issue! EK
         self.image[np.where((self.mask * self.image) < 0.0)] = 0
 
-        # PRINTING
-        print "size_thresh is set to %d (magic: %d)" %\
-            (self.size_thresh, 1000)
-        print "adapt_thresh is set to %d (magic: %d)" % \
-            (self.adapt_thresh, 100)
-        print "smooth_size is set to %d (magic: %d)" % \
-            (self.smooth_size, 10)
-        print "fill_hole_size is set to %f (magic: %f)" % \
-            (fill_hole_size, 5)
+        if verbose:
+            print "size_thresh is set to %d (magic: %d)" %\
+                (self.size_thresh, 1000)
+            print "adapt_thresh is set to %d (magic: %d)" % \
+                (self.adapt_thresh, 100)
+            print "smooth_size is set to %d (magic: %d)" % \
+                (self.smooth_size, 10)
+            print "fill_hole_size is set to %f (magic: %f)" % \
+                (fill_hole_size, 5)
 
         if test_mode:
             p.imshow(np.log10(self.image), origin="lower", interpolation=None,
@@ -587,25 +580,21 @@ class fil_finder_2D(object):
             p.clf()
             p.imshow(self.flat_img, interpolation=None, origin="lower",
                      cmap='binary', vmin=vmin, vmax=vmax)
-
-            '''
-            p.imshow(self.mask)
-            ax = p.gca()
-            ax.invert_yaxis()
-            p.show()
-            return'''
-
             if num != 0:
                 p.contour(self.mask, colors="r")
-
-            p.title("Mask on Flattened Image."+run_name)
+            p.title("Mask on Flattened Image." + run_name)
             if save_png:
                 try_mkdir(self.save_name)
-                p.savefig(os.path.join(self.save_name, self.save_name+run_name+"_mask.png"))
+                p.savefig(os.path.join(self.save_name, self.save_name + run_name + "_mask.pdf"))
             if verbose:
                 p.show()
             if in_ipynb():
                 p.clf()
+
+        if output_mask_objs:
+            if num == 0:
+                return [0, 0]
+            return [mask_objs, corners]
 
         return self
 
