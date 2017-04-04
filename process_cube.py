@@ -13,7 +13,7 @@ import filfind_class as filfind
 
 
 def preprocess_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_range,
-                                save_struct=True, verbose_process=False, verbose=True):
+                                   save_struct=True, verbose_process=False, verbose=True):
     '''
     Takes a GALFA data cube file, cuts it to the specified dimentions, and
     processes it slice by slice to find strucutres on each v slice with filfind.

@@ -45,3 +45,14 @@ class MaskObjNodeTree:
     def removeLastNode(self):
     def visitAllNodes(self):
     '''
+
+
+def newTreeFromNode(node, mark_as_visited=True, verbose=False):
+    if verbose:
+        print "\tNew Tree!"
+    if mark_as_visited:
+        node.visited = True
+
+    new_tree = MaskObjNodeTree(node)
+
+    return new_tree
