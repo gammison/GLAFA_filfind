@@ -47,10 +47,11 @@ class MaskObjNodeTree:
     def getTreeMaskedArea2D(self):
         return self.root_node.masked_area_size
 
-    '''
     def removeLastNode(self):
+        pass
+
     def visitAllNodes(self):
-    '''
+        pass
 
 
 def newTreeFromNode(node, mark_as_visited=True, verbose=False):
