@@ -7,6 +7,8 @@ import sys
 import pickle
 import glob
 from astropy.io import fits
+from astropy import units as u
+from astropy.coordinates import SkyCoord as coord
 import scipy.ndimage
 import numpy as np
 import mask_obj_node as maskNode
@@ -225,6 +227,23 @@ def umask_and_save(data, hdr, save_dir, file_name):
     fits.writeto(save_path, umask_data, header=hdr)
 
     return umask_data
+
+
+def radecs_to_lb(ras, decs):
+    '''
+    Transformation between lists of ras, decs, to ls, bs. Assumes ra, dec in degrees
+    Conforms to astropy 0.4.3
+    taken from https://github.com/seclark/FITSHandling/commit/f04a6e54c6624741e4f3077ba8ba96af620871ac
+
+    for lb masks
+    '''
+    obj = coord.SkyCoord(ras, decs, unit="deg", frame="icrs")
+    obj = obj.galactic
+
+    ls = obj.l.degree
+    bs = obj.b.degree
+
+    return ls, bs
 
 
 def circ_kern(diameter):
