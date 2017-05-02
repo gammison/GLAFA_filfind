@@ -1,5 +1,5 @@
 '''
-This takes in a GALFA cube and processes it into a dict of dict
+This takes in a GALFA cube and processes it into a dict of dict of masks
 '''
 
 # imports
@@ -7,11 +7,8 @@ import sys
 import pickle
 import glob
 from astropy.io import fits
-from astropy import units as u
-from astropy.coordinates import SkyCoord as coord
-import scipy.ndimage
-import numpy as np
 import mask_obj_node as maskNode
+import cube_processes as cube
 fil_finder_dir = '/Users/larryli/Documents/CC/16-17/research/GALFA_filfind/fil_finder'
 sys.path.append(fil_finder_dir)
 import filfind_class as filfind
@@ -81,7 +78,7 @@ def preprocess_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_rang
 
 
 def preprocess_singleslice_filfind_struct(file_dir, file_name, slice_v_index, x_range, y_range,
-                                          umask=False, save_struct=False, verbose_process=False, verbose=True):
+                                          umask=False, umask_radius=None, save_struct=False, verbose_process=False, verbose=True):
     '''
     Take a single GALFA data slice file, sharp mask it if necessary and then
     cut it to the specified dimentions,
@@ -95,7 +92,7 @@ def preprocess_singleslice_filfind_struct(file_dir, file_name, slice_v_index, x_
     full_slice, hdr = fits.getdata(file_dir + file_name, header=True)
 
     if umask:
-        full_slice = umask_and_save(full_slice, hdr, '../data/umask_from_susan/', file_name)
+        full_slice = cube.umask_and_save(full_slice, hdr, '../data/umask_from_susan/', file_name, umask_radius)
 
     # full slice dimentions
     full_slice_shape = full_slice.shape
@@ -212,80 +209,3 @@ def process_dataslice_filfind_struct(data, hdr, slice_v_index, verbose_process=F
             nodes_in_dataslice[this_mask_node.masked_area_size] = this_mask_node
 
     return nodes_in_dataslice
-
-
-def mask_lb(data, hdr, b_cutoff, toNaN=False, l_cutoff=None):
-    pass
-
-
-def umask_and_save(data, hdr, save_dir, file_name):
-    '''
-    unsharp masking a data slice and saving it
-    '''
-    save_path = save_dir + file_name.rsplit('.', 1)[0] + '_umask.fits'
-    umask_data = umask(data)
-    fits.writeto(save_path, umask_data, header=hdr)
-
-    return umask_data
-
-
-def radecs_to_lb(ras, decs):
-    '''
-    Transformation between lists of ras, decs, to ls, bs. Assumes ra, dec in degrees
-    Conforms to astropy 0.4.3
-    taken from https://github.com/seclark/FITSHandling/commit/f04a6e54c6624741e4f3077ba8ba96af620871ac
-
-    for lb masks
-    '''
-    obj = coord.SkyCoord(ras, decs, unit="deg", frame="icrs")
-    obj = obj.galactic
-
-    ls = obj.l.degree
-    bs = obj.b.degree
-
-    return ls, bs
-
-
-def circ_kern(diameter):
-    '''
-    Performs a circle-cut of given diameter on inkernel.
-    Outkernel is 0 anywhere outside the window.
-    taken from https://github.com/seclark/RHT/blob/master/rht.py
-
-    for umask step
-    '''
-    assert diameter % 2
-    r = diameter // 2   # int(np.floor(diameter / 2))
-    mnvals = np.indices((diameter, diameter)) - r
-    rads = np.hypot(mnvals[0], mnvals[1])
-    return np.less_equal(rads, r).astype(np.int)
-
-
-def umask(data, radius=15, smr_mask=None):
-    '''
-    unsharp masking of a data slice
-    taken from https://github.com/seclark/RHT/blob/master/rht.py
-    ^conversion to binary data step skipped
-
-    radius is set to 15 by default for GALFA data: diameter of 30 arcmin
-    '''
-    assert data.ndim == 2
-
-    kernel = circ_kern(2 * radius + 1)
-    outdata = scipy.ndimage.filters.correlate(data, kernel)
-
-    # Correlation is the same as convolution here because kernel is symmetric
-    # Our convolution has scaled outdata by sum(kernel), so we will divide out these weights.
-    kernweight = np.sum(kernel)
-    subtr_data = data - outdata / kernweight
-
-    # No values < 0
-    subtr_data[np.where(subtr_data < 0.0)] = 0
-
-    # set NaNs to 0??
-    # subtr_data[np.where(subtr_data == np.NaN)] = 0
-
-    if smr_mask is None:
-        return subtr_data
-    else:
-        return np.logical_and(smr_mask, subtr_data)
