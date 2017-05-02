@@ -29,9 +29,9 @@ def index_to_radec(xs, ys, hdr, verbose=True):
         if verbose:
             print "\t x & y array sizes different in conversion to RA-DEC"
 
-    ras = (xs - hdr['CRPIX1']) * hdr['CDELT1'] - hdr['CRVAL1']
-    decs = (ys - hdr['CRPIX2']) * hdr['CDELT2'] - hdr['CRVAL2']
-
+    ras = (xs - hdr['CRPIX1']) * hdr['CDELT1'] + hdr['CRVAL1']
+    decs = (ys - hdr['CRPIX2']) * hdr['CDELT2'] + hdr['CRVAL2']
+    # ^redundant but the right way?
     return ras, decs
 
 
