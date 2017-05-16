@@ -1,4 +1,5 @@
 import numpy as np
+import cube_processes as cube
 
 
 class MaskObjNode:
@@ -198,3 +199,32 @@ class MaskObjNode:
             corners = self.corners
 
         return (corners[1][0] - corners[0][0]) * (corners[1][1] - corners[0][1])
+
+
+def check_node_b_cutoff(node, hdr, b_cutoff=30):
+    '''
+    checks if the node is within the b_cutoff range
+
+    Arguments:
+        node {[mask_node]} -- [description]
+        hdr {[fits header]} -- [description]
+
+    Keyword Arguments:
+        b_cutoff {number} -- [description] (default: {30})
+
+    Returns:
+        bool -- True if within, False if not
+    '''
+    xs = [node.corner_BL[0], node.corner_TR[0]]
+    ys = [node.corner_BL[1], node.corner_TR[1]]
+
+    ras, decs = cube.index_to_radec(xs, ys, hdr)
+    ls, bs = cube.radecs_to_lb(ras, decs)
+
+    if bs[0] * bs[1] <= 0:
+        return True
+
+    if np.abs(bs[0]) >= b_cutoff and np.abs(bs[1]) >= b_cutoff:
+        return False
+    else:
+        return True
