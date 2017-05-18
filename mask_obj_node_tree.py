@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class MaskObjNodeTree:
     '''
     This node_tree object is made to contain the nodes which contain masks
@@ -46,6 +49,12 @@ class MaskObjNodeTree:
 
     def getTreeMaskedArea2D(self):
         return self.root_node.masked_area_size
+
+    def getTreeVelocityRange(self):
+        return np.arange(self.root_v_slice, self.root_v_slice + self.length)
+
+    def getTreeStartingVelocity(self):
+        return self.root_v_slice
 
     def removeLastNode(self):
         pass
