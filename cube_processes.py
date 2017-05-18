@@ -33,14 +33,14 @@ def find_all_trees_from_slices(vs, dict_full_names, hdr, overlap_thresh=.75, rev
         print "\n\nLength of velocities and dictionaries don't match"
         sys.exit()
 
-    for i in range(len(vs)):
-        dict_recover_path = dict_full_names[i]
+    for v in range(len(vs)):
+        dict_recover_path = dict_full_names[v]
         nodes_in_v_slice = pickle.load(open(dict_recover_path, 'rb'))
 
         if verbose:
-            print "working on v slice %d" % vs[i]
+            print "working on v slice %d" % vs[v]
 
-        if i == 0:
+        if v == 0:
             for j in sorted(nodes_in_v_slice.keys(), reverse=True):
                 # create trees and match masks by descending size
                 if verbose:
@@ -51,7 +51,7 @@ def find_all_trees_from_slices(vs, dict_full_names, hdr, overlap_thresh=.75, rev
                     continue
 
                 new_tree = maskTree.newTreeFromNode(current_node, verbose=verbose)
-                nodes_by_tree[new_tree.getTreeMaskedArea2D()] = new_tree
+                add_tree_to_dict(new_tree, nodes_by_tree)
         else:
             for j in sorted(nodes_in_v_slice.keys(), reverse=True):
                 # match masks by descending size onto existing trees
@@ -64,8 +64,10 @@ def find_all_trees_from_slices(vs, dict_full_names, hdr, overlap_thresh=.75, rev
 
                 if not match_node_onto_tree(current_node, nodes_by_tree, overlap_thresh, verbose=verbose):
                     new_tree = maskTree.newTreeFromNode(current_node, verbose=verbose)
-                    nodes_by_tree[new_tree.getTreeMaskedArea2D()] = new_tree
-            end_noncontinuous_trees(nodes_by_tree, vs[i])
+                    add_tree_to_dict(new_tree, nodes_by_tree)
+
+            end_noncontinuous_trees(nodes_by_tree, vs[v])
+            delete_small_dead_trees(nodes_by_tree)
 
         del nodes_in_v_slice
 
@@ -82,17 +84,17 @@ def match_node_onto_tree(node, trees, overlap_thresh, verbose=False):
     '''
     has_matched = False
 
-    for i in sorted(trees.keys(), reverse=True):
+    for k in sorted(trees.keys(), reverse=True):
         # search the existing trees by descending size
-        if trees[i].has_ended:
+        if trees[k].has_ended:
             continue
         else:
-            if trees[i].getLastNode().checkMaskOverlap(node, overlap_thresh):
+            if trees[k].getLastNode().checkMaskOverlap(node, overlap_thresh):
                 node.visited = True
                 has_matched = True
-                trees[i].addNode(node, verbose)
+                trees[k].addNode(node, verbose)
                 if verbose:
-                    print "\t\t matched with tree %d" % i
+                    print "\t\t matched with tree %s" % k
                 break
             else:
                 continue
@@ -217,18 +219,27 @@ def find_all_children(tree, nodes_by_v_slice, overlap_thresh, reverse=False, ver
     return tree
 
 
-def prune_trees(all_trees, size_cut=30, length_cut=2, length_limit=36):
+def prune_trees(all_trees, size_cut=30, length_cut=3, length_limit=36, verbose=False):
     pruned_trees = dict(all_trees)
+
+    bad_trees_keys = []
+
     for k in pruned_trees:
         # cut length
         if pruned_trees[k].length >= length_limit or pruned_trees[k].length < length_cut:
-            del pruned_trees[k]
+            bad_trees_keys.append(k)
             continue
 
         # cut size
         if pruned_trees[k].getTreeMaskedArea2D() < size_cut:
-            del pruned_trees[k]
+            bad_trees_keys.append(k)
             continue
+
+    if verbose:
+        print "\t\t deleting %d trees that don't fit the criteria" % len(bad_trees_keys)
+
+    for k in bad_trees_keys:
+        del pruned_trees[k]
 
     return pruned_trees
 
@@ -353,3 +364,58 @@ def umask(data, radius=15, smr_mask=None):
         return subtr_data
     else:
         return np.logical_and(smr_mask, subtr_data)
+
+
+def add_tree_to_dict(tree, dictionary):
+    '''
+    Saves a tree to the dictionary and avoid name overlaps by adding the
+    initial velocity and appending a letter if necessary
+
+    Arguments:
+        tree {[type]} -- [description]
+        dict {[type]} -- [description]
+    '''
+    key = str(tree.getTreeMaskedArea2D())
+    key += '_' + str(tree.getTreeStartingVelocity()) + '_0'
+
+    while key in dictionary:
+        key = tree_key_hash(key)
+
+    dictionary[key] = tree
+
+
+def tree_key_hash(original_key):
+    '''
+    hash them keys
+
+    Arguments:
+        original_key {[type]} -- [description]
+    '''
+    key_base = original_key.rsplit('_', 1)[0]
+    key_num = int(original_key.rsplit('_', 1)[1])
+
+    key_num += 1
+
+    new_key = key_base + key_num
+    return new_key
+
+
+def delete_small_dead_trees(all_trees, length_cutoff=1, verbose=False):
+    '''
+    delete all the trees that have length = 1 and have ended
+
+    Arguments:
+        tree_dict {[type]} -- [description]
+    '''
+    bad_trees_keys = []
+
+    for k in all_trees:
+        if all_trees[k].has_ended and all_trees[k].length == length_cutoff:
+            bad_trees_keys.append(k)
+            continue
+
+    if verbose:
+        print "\t\t deleting %d trees that are small & dead" % len(bad_trees_keys)
+
+    for k in bad_trees_keys:
+        del all_trees[k]
