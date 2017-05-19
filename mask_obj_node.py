@@ -200,6 +200,39 @@ class MaskObjNode:
 
         return (corners[1][0] - corners[0][0]) * (corners[1][1] - corners[0][1])
 
+    def getDimentions(self):
+        '''
+        Calculate the pixel dimentions of the mask
+
+        Returns:
+            [type] -- [description]
+        '''
+        width = self.corner_TR[0] - self.corner_BL[0]
+        height = self.corner_TR[1] - self.corner_BL[1]
+
+        assert width > 0, "width is 0 or negative"
+        assert height > 0, "height is 0 or negative"
+
+        return width, height
+
+    def getAR(self):
+        '''
+        Calculate the aspect ratio of the mask
+
+        Returns:
+            [type] -- [description]
+        '''
+        width, height = self.getDimentions()
+
+        ar = float(width) / height
+
+        if ar < 1:
+            ar = float(height) / width
+
+        assert ar >= 1, "Aspect Ratio is less than 1"
+
+        return ar
+
 
 def check_node_b_cutoff(node, hdr, b_cutoff=30):
     '''

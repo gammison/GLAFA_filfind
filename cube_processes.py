@@ -246,7 +246,7 @@ def prune_trees(all_trees, size_cut=30, length_cut=3, length_limit=36, verbose=F
 
 def get_length_dist(all_trees):
     '''
-    return the length distribution of all the trees
+    return the lengths of all the trees
     Arguments:
         all_trees {[type]} -- [description]
 
@@ -259,6 +259,41 @@ def get_length_dist(all_trees):
         length_dist.append(all_trees[k].length)
 
     return np.array(length_dist)
+
+
+def get_size_dist(all_trees):
+    '''
+    return the sizes of all the trees
+    Arguments:
+        all_trees {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    '''
+    size_dist = []
+
+    for k in all_trees:
+        size_dist.append(tree_key_unhash(k)[0])
+
+    return np.array(size_dist)
+
+
+def get_ar_dist(all_trees):
+    '''
+    return the aspect ratios of the all the trees (from rectangle mask)
+
+    Arguments:
+        all_trees {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    '''
+    ar_dist = []
+
+    for k in all_trees:
+        ar_dist.append(all_trees[k].getTreeAspectRatio())
+
+    return np.array(ar_dist)
 
 
 def index_to_radec(xs, ys, hdr, verbose=True):
@@ -388,6 +423,8 @@ def tree_key_hash(original_key):
     '''
     hash them keys
 
+    in format: masked_area_size + '_' + starting_v + '_' + some letter
+
     Arguments:
         original_key {[type]} -- [description]
     '''
@@ -398,6 +435,25 @@ def tree_key_hash(original_key):
 
     new_key = key_base + key_num
     return new_key
+
+
+def tree_key_unhash(key):
+    '''
+    unhash them keys
+
+    Arguments:
+        key {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    '''
+    key_decomp = key.rsplit('_')
+
+    masked_area_size = int(key_decomp[0])
+    starting_v = int(key_decomp[1])
+    letter = key_decomp[2]
+
+    return masked_area_size, starting_v, letter
 
 
 def delete_small_dead_trees(all_trees, length_cutoff=1, verbose=False):

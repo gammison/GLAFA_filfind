@@ -56,6 +56,9 @@ class MaskObjNodeTree:
     def getTreeStartingVelocity(self):
         return self.root_v_slice
 
+    def getTreeAspectRatio(self):
+        return self.root_node.getAR()
+
     def removeLastNode(self):
         pass
 
