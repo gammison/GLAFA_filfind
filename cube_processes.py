@@ -273,7 +273,7 @@ def get_size_dist(all_trees):
     size_dist = []
 
     for k in all_trees:
-        size_dist.append(tree_key_unhash(k)[0])
+        size_dist.append(all_trees[k].root_node.masked_area_size)
 
     return np.array(size_dist)
 
