@@ -78,7 +78,8 @@ def preprocess_cube_filfind_struct(file_dir, file_name, v_range, x_range, y_rang
 
 
 def preprocess_singleslice_filfind_struct(file_dir, file_name, slice_v_index, x_range, y_range,
-                                          umask=False, umask_radius=None, save_struct=False, verbose_process=False, verbose=True):
+                                          umask=False, umask_radius=None, umask_filter='tophat',
+                                          save_struct=False, verbose_process=False, verbose=True):
     '''
     Take a single GALFA data slice file, sharp mask it if necessary and then
     cut it to the specified dimentions,
@@ -90,9 +91,6 @@ def preprocess_singleslice_filfind_struct(file_dir, file_name, slice_v_index, x_
     '''
     # import slice
     full_slice, hdr = fits.getdata(file_dir + file_name, header=True)
-
-    if umask:
-        full_slice = cube.umask_and_save(full_slice, hdr, '../data/umask_from_susan/', file_name, umask_radius)
 
     # full slice dimentions
     full_slice_shape = full_slice.shape
@@ -106,6 +104,9 @@ def preprocess_singleslice_filfind_struct(file_dir, file_name, slice_v_index, x_
     # cut slice based on provided x&y dimentions
     cut_slice = full_slice[y_range[0]:y_range[1], x_range[0]:x_range[1]]
 
+    if umask:
+        cut_slice = cube.umask_and_save(cut_slice, hdr, '../data/umask_from_susan/', file_name, umask_radius, umask_filter)
+
     # find masks in slice
     # store masks in nodes, and all nodes in an dict by their masked_area_size
     if verbose:
@@ -115,6 +116,8 @@ def preprocess_singleslice_filfind_struct(file_dir, file_name, slice_v_index, x_
 
     if len(nodes_in_slice) == 0:
         print "\n\tNO objects in slice %d" % slice_v_index
+
+    del full_slice
 
     # exit options
     if save_struct:
@@ -206,6 +209,58 @@ def process_dataslice_filfind_struct(data, hdr, slice_v_index, verbose_process=F
     if mask_objs[0] != 0:
         for i in range(0, len(mask_objs[0])):
             this_mask_node = maskNode.MaskObjNode(mask_objs[0][i], mask_objs[1][i], slice_v_index)
-            nodes_in_dataslice[this_mask_node.masked_area_size] = this_mask_node
+            add_node_to_dict(this_mask_node, nodes_in_dataslice)
 
     return nodes_in_dataslice
+
+
+def add_node_to_dict(node, dictionary):
+    '''
+    adds the node to the dictionary and prevents overlapping
+    Arguments:
+        node {[type]} -- [description]
+        dictionary {[type]} -- [description]
+    '''
+    key = str(node.masked_area_size)
+    key += '_0'
+
+    while key in dictionary:
+        key = node_key_hash(key)
+
+    dictionary[key] = node
+
+
+def node_key_hash(original_key):
+    '''
+    hash them keys
+
+    in format: masked_area_size + '_' + some number
+
+    Arguments:
+        original_key {[type]} -- [description]
+    '''
+    key_base = original_key.rsplit('_', 1)[0]
+    key_num = int(original_key.rsplit('_', 1)[1])
+
+    key_num += 1
+
+    new_key = key_base + '_' + str(key_num)
+    return new_key
+
+
+def node_key_unhash(key):
+    '''
+    unhash them keys
+
+    Arguments:
+        key {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    '''
+    key_decomp = key.rsplit('_')
+
+    masked_area_size = int(key_decomp[0])
+    number = key_decomp[1]
+
+    return masked_area_size, number

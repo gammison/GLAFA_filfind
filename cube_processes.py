@@ -7,6 +7,7 @@ import sys
 import pickle
 import scipy.ndimage
 import numpy as np
+import math
 from astropy.io import fits
 from astropy import units as u
 from astropy.coordinates import SkyCoord as coord
@@ -325,15 +326,12 @@ def mask_lb(data, hdr, b_cutoff=30, toNaN=False, l_cutoff=None):
     pass
 
 
-def umask_and_save(data, hdr, save_dir, file_name, radius=None):
+def umask_and_save(data, hdr, save_dir, file_name, radius=None, umask_filter=None):
     '''
     unsharp masking a data slice and saving it
     '''
     save_path = save_dir + file_name.rsplit('.', 1)[0] + '_umask.fits'
-    if radius is None:
-        umask_data = umask(data)
-    else:
-        umask_data = umask(data, radius)
+    umask_data = umask(data, radius, umask_filter)
     fits.writeto(save_path, umask_data, header=hdr)
 
     return umask_data
@@ -371,7 +369,7 @@ def circ_kern(diameter):
     return np.less_equal(rads, r).astype(np.int)
 
 
-def umask(data, radius=15, smr_mask=None):
+def umask(data, radius=15, filter_opt='tophat', smr_mask=None):
     '''
     unsharp masking of a data slice
     taken from https://github.com/seclark/RHT/blob/master/rht.py
@@ -381,24 +379,37 @@ def umask(data, radius=15, smr_mask=None):
     '''
     assert data.ndim == 2
 
-    kernel = circ_kern(2 * radius + 1)
-    outdata = scipy.ndimage.filters.correlate(data, kernel)
+    if filter_opt == 'tophat':
+        print "doing tophat umask filter"
+        kernel = circ_kern(2 * radius + 1)
+        outdata = scipy.ndimage.filters.correlate(data, kernel)
 
-    # Correlation is the same as convolution here because kernel is symmetric
-    # Our convolution has scaled outdata by sum(kernel), so we will divide out these weights.
-    kernweight = np.sum(kernel)
-    subtr_data = data - outdata / kernweight
+        # Correlation is the same as convolution here because kernel is symmetric
+        # Our convolution has scaled outdata by sum(kernel), so we will divide out these weights.
+        kernweight = np.sum(kernel)
+        fin_out_data = data - outdata / kernweight
 
-    # No values < 0
-    subtr_data[np.where(subtr_data < 0.0)] = 0
+    elif filter_opt == 'gaussian':
+        print "doing gaussian umask filter"
+        # we want the FWHM to = radius so we do the FWHM = 2(2ln2)^.5 sigma conversion
+        sigma = float(radius) / (8 * math.log(2)) ** 0.5
+        print sigma
+        fin_out_data = scipy.ndimage.filters.gaussian_filter(data, sigma)
+
+    else:
+        return 0
+
+    fin_out_data[np.where(fin_out_data < 0.0)] = 0
+
+    print np.shape(fin_out_data)
 
     # set NaNs to 0??
     # subtr_data[np.where(subtr_data == np.NaN)] = 0
 
     if smr_mask is None:
-        return subtr_data
+        return fin_out_data
     else:
-        return np.logical_and(smr_mask, subtr_data)
+        return np.logical_and(smr_mask, fin_out_data)
 
 
 def add_tree_to_dict(tree, dictionary):
@@ -423,7 +434,7 @@ def tree_key_hash(original_key):
     '''
     hash them keys
 
-    in format: masked_area_size + '_' + starting_v + '_' + some letter
+    in format: masked_area_size + '_' + starting_v + '_' + some number
 
     Arguments:
         original_key {[type]} -- [description]
@@ -433,7 +444,7 @@ def tree_key_hash(original_key):
 
     key_num += 1
 
-    new_key = key_base + key_num
+    new_key = key_base + '_' + str(key_num)
     return new_key
 
 
@@ -451,9 +462,9 @@ def tree_key_unhash(key):
 
     masked_area_size = int(key_decomp[0])
     starting_v = int(key_decomp[1])
-    letter = key_decomp[2]
+    number = key_decomp[2]
 
-    return masked_area_size, starting_v, letter
+    return masked_area_size, starting_v, number
 
 
 def delete_small_dead_trees(all_trees, length_cutoff=1, verbose=False):
