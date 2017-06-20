@@ -394,7 +394,7 @@ def umask(data, radius=15, filter_opt='tophat', smr_mask=None):
         # we want the FWHM to = radius so we do the FWHM = 2(2ln2)^.5 sigma conversion
         sigma = float(radius) / (8 * math.log(2)) ** 0.5
         print sigma
-        fin_out_data = scipy.ndimage.filters.gaussian_filter(data, sigma)
+        fin_out_data = data - scipy.ndimage.filters.gaussian_filter(data, sigma)
 
     else:
         return 0
