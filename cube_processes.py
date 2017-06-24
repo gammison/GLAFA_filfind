@@ -13,6 +13,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord as coord
 import mask_obj_node_tree as maskTree
 import mask_obj_node as maskNode
+import preprocess_cube as preprocess
 
 
 def find_all_trees_from_slices(vs, dict_full_names, hdr, overlap_thresh=.75, reverse_find=False, verbose=False):
@@ -42,22 +43,24 @@ def find_all_trees_from_slices(vs, dict_full_names, hdr, overlap_thresh=.75, rev
             print "working on v slice %d" % vs[v]
 
         if v == 0:
-            for j in sorted(nodes_in_v_slice.keys(), reverse=True):
+            for j in sorted_node_dict_keys(nodes_in_v_slice.keys()):
                 # create trees and match masks by descending size
                 if verbose:
-                    print "\ton mask %d" % j
+                    print "\ton mask {}".format(int(j.split('_')[0]))
 
                 current_node = nodes_in_v_slice[j]
                 if not maskNode.check_node_b_cutoff(current_node, hdr):
+                    if verbose:
+                        print "\t\tmask didn't make b cutoff"
                     continue
 
                 new_tree = maskTree.newTreeFromNode(current_node, verbose=verbose)
                 add_tree_to_dict(new_tree, nodes_by_tree)
         else:
-            for j in sorted(nodes_in_v_slice.keys(), reverse=True):
+            for j in sorted_node_dict_keys(nodes_in_v_slice.keys()):
                 # match masks by descending size onto existing trees
                 if verbose:
-                    print "\ton mask %d" % j
+                    print "\ton mask {}".format(j)
 
                 current_node = nodes_in_v_slice[j]
                 if not maskNode.check_node_b_cutoff(current_node, hdr):
@@ -68,7 +71,7 @@ def find_all_trees_from_slices(vs, dict_full_names, hdr, overlap_thresh=.75, rev
                     add_tree_to_dict(new_tree, nodes_by_tree)
 
             end_noncontinuous_trees(nodes_by_tree, vs[v])
-            delete_small_dead_trees(nodes_by_tree)
+            delete_short_dead_trees(nodes_by_tree)
 
         del nodes_in_v_slice
 
@@ -466,8 +469,19 @@ def tree_key_unhash(key):
 
     return masked_area_size, starting_v, number
 
+def sorted_node_dict_keys(node_dict_keys, reverse_by_val=True):
+    '''
+    sort the node dict keys
+    Arguments:
+        tree_dict_keys {[type]} -- [description]
+    '''
+    mapped_keys = map(lambda s: (s, preprocess.node_key_unhash(s)[0]), node_dict_keys)
 
-def delete_small_dead_trees(all_trees, length_cutoff=1, verbose=False):
+    sorted_mapped_keys = sorted(mapped_keys, key=lambda x: x[1], reverse=reverse_by_val)
+    return map(lambda (k, v): k, sorted_mapped_keys)
+
+
+def delete_short_dead_trees(all_trees, length_cutoff=1, verbose=False):
     '''
     delete all the trees that have length = 1 and have ended
 
